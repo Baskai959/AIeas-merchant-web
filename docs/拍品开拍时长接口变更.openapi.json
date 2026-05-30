@@ -1,0 +1,334 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "拍品创建与直播间开拍时长接口变更",
+    "version": "1.0.0",
+    "description": "拍品创建阶段不再由商家选择开始时间和结束时间；直播间开拍时提交拍卖时长。"
+  },
+  "paths": {
+    "/api/v1/auctions": {
+      "post": {
+        "summary": "创建拍品",
+        "description": "创建拍品只保存商品、价格、保证金、防抢拍和加价规则等配置。新建拍品固定为草稿，不允许前端传入 RUNNING/EXTENDED 等竞拍中状态，也不传 startTime/endTime。",
+        "operationId": "createAuction",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuctionCreateRequest"
+              },
+              "examples": {
+                "fixedIncrement": {
+                  "summary": "固定加价",
+                  "value": {
+                    "itemId": 10001,
+                    "auctionType": "ENGLISH",
+                    "startPrice": 1000,
+                    "reservePrice": 5000,
+                    "depositAmount": 0,
+                    "incrementRule": {
+                      "type": "fixed",
+                      "amount": 100
+                    },
+                    "antiSnipingSec": 15,
+                    "antiExtendSec": 30,
+                    "status": "DRAFT"
+                  }
+                },
+                "ladderIncrement": {
+                  "summary": "阶梯加价",
+                  "value": {
+                    "itemId": 10001,
+                    "auctionType": "ENGLISH",
+                    "startPrice": 1000,
+                    "reservePrice": 5000,
+                    "depositAmount": 0,
+                    "incrementRule": {
+                      "type": "ladder",
+                      "steps": [
+                        {
+                          "min": 0,
+                          "max": 10000,
+                          "amount": 100
+                        },
+                        {
+                          "min": 10000,
+                          "amount": 500
+                        }
+                      ]
+                    },
+                    "antiSnipingSec": 15,
+                    "antiExtendSec": 30,
+                    "status": "DRAFT"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuctionLot"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live-rooms/{id}/activate": {
+      "post": {
+        "summary": "直播间开拍商品",
+        "description": "开拍时选择本轮拍卖时长。建议后端以 durationSec 作为权威字段，并按服务端当前时间计算 startTime/endTime。",
+        "operationId": "activateLiveRoomAuction",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "直播间 ID"
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "幂等键"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LiveRoomActivateRequest"
+              },
+              "example": {
+                "auctionId": 90001,
+                "durationSec": 600
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "开拍成功，返回直播间最新状态",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveRoom"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "直播间未开播、已有开拍商品、拍品状态不允许开拍或 durationSec 不合法"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AuctionCreateRequest": {
+        "type": "object",
+        "required": [
+          "itemId",
+          "auctionType",
+          "startPrice",
+          "reservePrice",
+          "incrementRule",
+          "antiSnipingSec",
+          "antiExtendSec",
+          "depositAmount"
+        ],
+        "properties": {
+          "itemId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "auctionType": {
+            "type": "string",
+            "enum": [
+              "ENGLISH"
+            ]
+          },
+          "startPrice": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "起拍价，单位分"
+          },
+          "reservePrice": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "保留价，单位分"
+          },
+          "depositAmount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "保证金，单位分"
+          },
+          "incrementRule": {
+            "$ref": "#/components/schemas/AuctionIncrementRule"
+          },
+          "antiSnipingSec": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "antiExtendSec": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT"
+            ],
+            "description": "前端创建时固定传 DRAFT；后端也可忽略该字段并默认草稿。"
+          }
+        },
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "startTime"
+              ]
+            },
+            {
+              "required": [
+                "endTime"
+              ]
+            }
+          ]
+        }
+      },
+      "AuctionIncrementRule": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/FixedIncrementRule"
+          },
+          {
+            "$ref": "#/components/schemas/LadderIncrementRule"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type"
+        }
+      },
+      "FixedIncrementRule": {
+        "type": "object",
+        "required": [
+          "type",
+          "amount"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "fixed"
+            ]
+          },
+          "amount": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "固定加价幅度，单位分"
+          }
+        }
+      },
+      "LadderIncrementRule": {
+        "type": "object",
+        "required": [
+          "type",
+          "steps"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ladder"
+            ]
+          },
+          "steps": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 50,
+            "items": {
+              "$ref": "#/components/schemas/AuctionIncrementStep"
+            }
+          }
+        }
+      },
+      "AuctionIncrementStep": {
+        "type": "object",
+        "required": [
+          "min",
+          "amount"
+        ],
+        "properties": {
+          "min": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "本档起始价，单位分。第一档必须为 0，后续档位应等于上一档 max。"
+          },
+          "max": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "本档结束价，单位分。最后一档不传，表示无上限。"
+          },
+          "amount": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "本档加价幅度，单位分"
+          }
+        }
+      },
+      "LiveRoomActivateRequest": {
+        "type": "object",
+        "required": [
+          "auctionId",
+          "durationSec"
+        ],
+        "properties": {
+          "auctionId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "durationSec": {
+            "type": "integer",
+            "enum": [
+              300,
+              600,
+              900,
+              1800
+            ],
+            "description": "本轮拍卖时长，单位秒。"
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "deprecated": true,
+            "description": "兼容旧前端字段。服务端应优先使用 durationSec。"
+          }
+        }
+      },
+      "AuctionLot": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "LiveRoom": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    }
+  }
+}

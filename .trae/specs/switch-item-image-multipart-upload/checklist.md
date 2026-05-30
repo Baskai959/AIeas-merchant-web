@@ -1,0 +1,9 @@
+- [ ] `ItemCreateRequest.images` / `ItemPatchRequest.images` 类型为 `File[]`
+- [ ] `createItem` / `updateItem` 通过 `multipart/form-data` 提交，浏览器自动携带 boundary
+- [ ] 创建商品携带图片时，请求体包含重复的 `images` 文件字段
+- [ ] 创建商品不带图片时，请求体不包含 `images` 字段
+- [ ] 更新商品选择新图片时，请求体包含新 `images` 文件字段（替换语义）
+- [ ] 更新商品未选择新图片时，请求体不包含 `images` 字段（保留原图）
+- [ ] 商品创建/编辑表单 `Upload` 组件继续使用 `autoUpload={false}` 且 `originFile` 直接透传服务层
+- [ ] `npm run typecheck` 通过
+- [ ] `npm run build` 通过

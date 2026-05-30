@@ -1,0 +1,38 @@
+const i18n = {
+  'en-US': {
+    'login.form.title': 'Merchant Auction Console',
+    'login.form.account.errMsg': 'Account is required',
+    'login.form.password.errMsg': 'Password cannot be empty',
+    'login.form.login.errMsg': 'Login failed, please check your account or try again later',
+    'login.form.account.placeholder': 'Account: merchant001',
+    'login.form.password.placeholder': 'Password',
+    'login.form.rememberAccount': 'Remember account',
+    'login.form.login': 'Sign in',
+    'login.form.subtitle': 'Merchant sign-in for items, auctions, live rooms and orders',
+    'login.banner.slogan1': 'Merchant-side auction operations',
+    'login.banner.subSlogan1': 'Unify listing, scheduling and live control workflows',
+    'login.banner.slogan2': 'Stable live operations',
+    'login.banner.subSlogan2': 'Keep item setup, auction control and order follow-up in one console',
+    'login.banner.slogan3': 'Clear auction workflow',
+    'login.banner.subSlogan3': 'Move from item readiness to live bidding and settlement review',
+  },
+  'zh-CN': {
+    'login.form.title': '商家端竞拍后台',
+    'login.form.account.errMsg': '账号不能为空',
+    'login.form.password.errMsg': '密码不能为空',
+    'login.form.login.errMsg': '登录失败，请检查账号信息或稍后重试',
+    'login.form.account.placeholder': '账号：merchant001',
+    'login.form.password.placeholder': '密码',
+    'login.form.rememberAccount': '记住账号',
+    'login.form.login': '登录',
+    'login.form.subtitle': '商家登录后统一管理商品、拍品、直播间和成交订单',
+    'login.banner.slogan1': '商家侧竞拍运营中台',
+    'login.banner.subSlogan1': '覆盖上架、排期、开拍与控场主流程',
+    'login.banner.slogan2': '直播控场稳定在线',
+    'login.banner.subSlogan2': '统一处理商品准备、开拍控场和订单跟进',
+    'login.banner.slogan3': '拍前拍后一站管理',
+    'login.banner.subSlogan3': '从商品上架、竞拍排期到成交复盘全流程覆盖',
+  },
+};
+
+export default i18n;
