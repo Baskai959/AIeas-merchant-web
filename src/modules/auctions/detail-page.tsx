@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+  Alert,
   Button,
   Card,
   Descriptions,
@@ -14,16 +15,17 @@ import AppPage from '@/components/AppPage';
 import AppState from '@/components/AppState';
 import SafeImage from '@/components/SafeImage';
 import { AuctionLot, fetchAuction } from '@/services/auctions';
-import { fetchItem, Item } from '@/services/items';
 import {
-  attachAuctionToLiveRoom,
-  detachAuctionFromLiveRoom,
-} from '@/services/liveRoom';
+  attachAuctionToLiveSession,
+  detachAuctionFromLiveSession,
+} from '@/services/liveSession';
 import {
   buildIdempotencyKey,
-  canAttachAuctionToLiveRoom,
-  canDetachAuctionFromLiveRoom,
+  canAttachAuctionToLiveSession,
+  canDetachAuctionFromLiveSession,
   canEditAuctionRules,
+  formatAuctionCategory,
+  formatCapPrice,
   formatDateTime,
   formatMoneyCent,
   renderAuctionStatusTag,
@@ -39,7 +41,6 @@ export default function AuctionDetailPage() {
   const history = useHistory();
   const { id } = useParams() as { id?: string };
   const [auction, setAuction] = useState<AuctionLot>();
-  const [item, setItem] = useState<Item>();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
 
@@ -56,9 +57,6 @@ export default function AuctionDetailPage() {
     try {
       const result = await fetchAuction(id);
       setAuction(result);
-      fetchItem(result.itemId)
-        .then(setItem)
-        .catch(() => setItem(undefined));
     } catch (error) {
       setLoadError('拍品详情加载失败，请稍后重试。');
     } finally {
@@ -74,17 +72,22 @@ export default function AuctionDetailPage() {
     if (!auction) {
       return;
     }
-    if (!canAttachAuctionToLiveRoom(auction.status)) {
-      Message.warning('当前拍品状态不支持上架到直播间');
+    if (!canAttachAuctionToLiveSession(auction.status)) {
+      Message.warning('当前拍品状态不支持上架到直播场次');
+      return;
+    }
+    if (!auction.liveSessionId) {
+      Message.warning('请先进入直播场次控制台挂载拍品');
       return;
     }
     setAttachLoading(true);
     try {
-      await attachAuctionToLiveRoom(
+      await attachAuctionToLiveSession(
+        auction.liveSessionId,
         auction.auctionId,
-        buildIdempotencyKey('live-room-attach', auction.auctionId)
+        buildIdempotencyKey('live-session-attach', auction.auctionId)
       );
-      Message.success('已上架到直播间');
+      Message.success('已上架到直播场次');
       loadAuctionDetail();
     } catch (error) {
       // 已提示
@@ -94,27 +97,28 @@ export default function AuctionDetailPage() {
   }
 
   async function handleDetach() {
-    if (!auction?.liveRoomId) return;
-    if (!canDetachAuctionFromLiveRoom(auction.status)) {
+    const liveSessionId = auction?.liveSessionId;
+    if (!auction || !liveSessionId) return;
+    if (!canDetachAuctionFromLiveSession(auction.status)) {
       Message.warning('已成交拍品已计入直播交易，不能下架。');
       return;
     }
     Modal.confirm({
       title: '下架拍品',
-      content: '确定将该拍品从直播间下架吗？',
+      content: '确定将该拍品从直播场次下架吗？',
       okText: '下架',
       cancelText: '取消',
       onOk: async () => {
         try {
-          await detachAuctionFromLiveRoom(
-            auction.liveRoomId!,
+          await detachAuctionFromLiveSession(
+            liveSessionId,
             auction.auctionId,
             buildIdempotencyKey(
-              'live-room-detach',
-              `${auction.liveRoomId}-${auction.auctionId}`
+              'live-session-detach',
+              `${liveSessionId}-${auction.auctionId}`
             )
           );
-          Message.success('已从直播间下架');
+          Message.success('已从直播场次下架');
           loadAuctionDetail();
         } catch (error) {
           // 已提示
@@ -131,10 +135,12 @@ export default function AuctionDetailPage() {
           <Button onClick={() => history.push('/auctions/list')}>
             返回列表
           </Button>
-          {auction?.liveRoomId ? (
+          {auction?.liveSessionId ? (
             <Button
               onClick={() =>
-                history.push(`/live-rooms/${auction.liveRoomId}/workbench`)
+                history.push(
+                  `/live-sessions/${auction.liveSessionId}/workbench`
+                )
               }
             >
               进入工作台
@@ -169,53 +175,68 @@ export default function AuctionDetailPage() {
             <Card className={styles.heroCard}>
               <div className={styles.heroBody}>
                 <SafeImage
-                  src={item?.images?.[0]}
-                  alt={item?.title || '拍品'}
+                  src={auction.coverUrl || auction.imageUrls?.[0]}
+                  alt={auction.title || '拍品'}
                   className={styles.heroImage}
                 />
                 <div className={styles.heroMain}>
                   <h1 className={styles.heroTitle}>
-                    {item?.title || '未命名拍品'}
+                    {auction.title || '未命名拍品'}
                   </h1>
                   <div className={styles.heroMeta}>
                     {renderAuctionStatusTag(auction.status)}
                     <Typography.Text type="secondary">
-                      {item?.category || '未分类'}
+                      {formatAuctionCategory(auction.category) || '未分类'}
                     </Typography.Text>
                     <Typography.Text type="secondary">
-                      {item?.brand || '未填写品牌'}
+                      {auction.brand || '未填写品牌'}
                     </Typography.Text>
                     <Typography.Text type="secondary">
-                      {auction.liveRoomId ? '已上架直播间' : '未上架直播间'}
+                      {auction.liveSessionId
+                        ? '已上架直播场次'
+                        : '未上架直播场次'}
                     </Typography.Text>
                   </div>
+                  {auction.subtitle ? (
+                    <Typography.Paragraph style={{ marginBottom: 8 }}>
+                      {auction.subtitle}
+                    </Typography.Paragraph>
+                  ) : null}
                   <Typography.Paragraph style={{ marginBottom: 14 }}>
-                    {item?.description || '暂无商品描述'}
+                    {auction.description || '暂无拍品描述'}
                   </Typography.Paragraph>
+                  {auction.status === 'AUDIT_REJECTED' &&
+                  auction.auditRejectReason ? (
+                    <Alert
+                      type="error"
+                      content={`审核未通过：${auction.auditRejectReason}`}
+                      style={{ marginBottom: 14 }}
+                    />
+                  ) : null}
                   <Space>
-                    {auction.liveRoomId ? (
+                    {auction.liveSessionId ? (
                       <>
                         <Button
                           onClick={() =>
                             history.push(
-                              `/live-rooms/${auction.liveRoomId}/workbench`
+                              `/live-sessions/${auction.liveSessionId}/workbench`
                             )
                           }
                         >
                           进入工作台
                         </Button>
-                        {canDetachAuctionFromLiveRoom(auction.status) ? (
+                        {canDetachAuctionFromLiveSession(auction.status) ? (
                           <Button onClick={handleDetach}>下架</Button>
                         ) : null}
                       </>
                     ) : (
                       <Button
                         type="primary"
-                        disabled={!canAttachAuctionToLiveRoom(auction.status)}
+                        disabled={!canAttachAuctionToLiveSession(auction.status)}
                         loading={attachLoading}
                         onClick={handleAttach}
                       >
-                        上架到直播间
+                        上架到直播场次
                       </Button>
                     )}
                   </Space>
@@ -244,19 +265,11 @@ export default function AuctionDetailPage() {
                       },
                       {
                         label: '封顶价',
-                        value: formatMoneyCent(auction.capPrice),
+                        value: formatCapPrice(auction.capPrice),
                       },
                       {
                         label: '保证金',
                         value: formatMoneyCent(auction.depositAmount),
-                      },
-                      {
-                        label: '开始时间',
-                        value: formatDateTime(auction.startTime),
-                      },
-                      {
-                        label: '结束时间',
-                        value: formatDateTime(auction.endTime),
                       },
                       {
                         label: '创建时间',
@@ -308,6 +321,12 @@ export default function AuctionDetailPage() {
                     <Typography.Paragraph style={{ marginBottom: 0 }}>
                       当前状态：{renderAuctionStatusTag(auction.status)}
                     </Typography.Paragraph>
+                    {auction.status === 'AUDIT_REJECTED' &&
+                    auction.auditRejectReason ? (
+                      <Typography.Text type="secondary">
+                        审核失败原因：{auction.auditRejectReason}
+                      </Typography.Text>
+                    ) : null}
                     {canEditAuctionRules(auction.status) ? (
                       <Typography.Text type="secondary">
                         当前拍品尚未正式开拍，可调整价格、保证金和加价规则。
@@ -334,6 +353,12 @@ export default function AuctionDetailPage() {
                           typeof auction.bidCount === 'number'
                             ? `${auction.bidCount} 次`
                             : '-',
+                      },
+                      {
+                        label: '当前价',
+                        value: formatMoneyCent(
+                          auction.currentPrice ?? auction.dealPrice
+                        ),
                       },
                       {
                         label: '中拍结果',

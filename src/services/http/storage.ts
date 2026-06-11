@@ -8,6 +8,8 @@ export interface SessionUser {
   role: UserRole;
   status?: string;
   avatar?: string;
+  avatarUrl?: string;
+  location?: string;
 }
 
 export interface SessionTokens {

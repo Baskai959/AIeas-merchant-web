@@ -3,7 +3,6 @@ import {
   Button,
   Card,
   Form,
-  Input,
   Message,
   Modal,
   Select,
@@ -17,20 +16,29 @@ import { useHistory } from 'react-router-dom';
 import AppPage from '@/components/AppPage';
 import AppState from '@/components/AppState';
 import SafeImage from '@/components/SafeImage';
-import { AuctionLot, AuctionStatus, listAuctions } from '@/services/auctions';
-import { fetchItem, Item } from '@/services/items';
 import {
-  attachAuctionToLiveRoom,
-  detachAuctionFromLiveRoom,
-} from '@/services/liveRoom';
+  AuctionLot,
+  AuctionStatus,
+  listAuctionCategories,
+  listAuctions,
+} from '@/services/auctions';
 import {
+  attachAuctionToLiveSession,
+  detachAuctionFromLiveSession,
+} from '@/services/liveSession';
+import {
+  AUCTION_CATEGORY_OPTIONS,
+  AuctionCategoryOption,
   AUCTION_STATUS_OPTIONS,
   buildIdempotencyKey,
-  canAttachAuctionToLiveRoom,
-  canDetachAuctionFromLiveRoom,
+  canAttachAuctionToLiveSession,
+  canDetachAuctionFromLiveSession,
   canEditAuctionRules,
+  formatAuctionCategory,
+  formatCapPrice,
   formatDateTime,
   formatMoneyCent,
+  normalizeAuctionCategory,
   renderAuctionStatusTag,
 } from './utils';
 import styles from '../management.module.less';
@@ -119,12 +127,14 @@ export default function AuctionListPage() {
   const history = useHistory();
   const filterFormRef = useRef<FormInstance>();
   const [auctions, setAuctions] = useState<AuctionLot[]>([]);
-  const [items, setItems] = useState<Record<string, Item>>({});
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [filters, setFilters] = useState<AuctionFilters>(
     DEFAULT_AUCTION_FILTERS
   );
+  const [categoryOptions, setCategoryOptions] = useState<
+    AuctionCategoryOption[]
+  >(AUCTION_CATEGORY_OPTIONS);
   const [pagination, setPagination] = useState<PaginationState>({
     current: 1,
     pageSize: 10,
@@ -148,6 +158,7 @@ export default function AuctionListPage() {
     while (offset < MAX_LIST_FETCH_COUNT) {
       const result = await listAuctions({
         status: nextFilters.status || undefined,
+        category: nextFilters.category || undefined,
         limit: LIST_FETCH_PAGE_SIZE,
         offset,
       });
@@ -162,42 +173,20 @@ export default function AuctionListPage() {
     return resultAuctions;
   }
 
-  async function fetchAuctionItems(nextAuctions: AuctionLot[]) {
-    const itemIds = Array.from(
-      new Set(
-        nextAuctions
-          .map((auction) => auction.itemId)
-          .filter((itemId) => itemId !== undefined && itemId !== null)
-          .map(String)
-      )
-    );
-    const missingItemIds = itemIds.filter((itemId) => !items[itemId]);
-    const itemResults = await Promise.all(
-      missingItemIds.map((itemId) => fetchItem(itemId).catch(() => undefined))
-    );
-    const nextItems = { ...items };
-    itemResults.forEach((item) => {
-      if (item) {
-        nextItems[String(item.id)] = item;
-      }
-    });
-    setItems(nextItems);
-    return nextItems;
-  }
-
   function filterAuctionsByCategory(
     nextAuctions: AuctionLot[],
-    nextItems: Record<string, Item>,
     category?: string
   ) {
-    const normalizedCategory = category?.trim().toLowerCase();
+    const normalizedCategory = normalizeAuctionCategory(
+      category,
+      categoryOptions
+    );
     if (!normalizedCategory) {
       return nextAuctions;
     }
     return nextAuctions.filter((auction) =>
-      nextItems[String(auction.itemId)]?.category
-        ?.toLowerCase()
-        .includes(normalizedCategory)
+      normalizeAuctionCategory(auction.category, categoryOptions) ===
+        normalizedCategory
     );
   }
 
@@ -209,10 +198,8 @@ export default function AuctionListPage() {
     setLoadError('');
     try {
       const nextAuctions = await fetchAllAuctions(nextFilters);
-      const nextItems = await fetchAuctionItems(nextAuctions);
       const filteredAuctions = filterAuctionsByCategory(
         nextAuctions,
-        nextItems,
         nextFilters.category
       );
       const sortedAuctions = sortAuctionsByTime(
@@ -234,13 +221,31 @@ export default function AuctionListPage() {
   }
 
   useEffect(() => {
+    async function loadCategoryOptions() {
+      try {
+        const result = await listAuctionCategories();
+        const options = (result.categories || [])
+          .map((category) => ({
+            label: category.name,
+            value: category.id,
+          }))
+          .filter((option) => option.label && option.value);
+        if (options.length) {
+          setCategoryOptions(options);
+        }
+      } catch {
+        setCategoryOptions(AUCTION_CATEGORY_OPTIONS);
+      }
+    }
+    loadCategoryOptions();
     loadAuctionList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleSearch(values: AuctionFilters) {
     const nextFilters: AuctionFilters = {
-      category: values.category?.trim() || undefined,
+      category:
+        normalizeAuctionCategory(values.category, categoryOptions) || undefined,
       status: values.status || undefined,
       timeSort: values.timeSort || DEFAULT_AUCTION_FILTERS.timeSort,
     };
@@ -277,13 +282,18 @@ export default function AuctionListPage() {
   }
 
   async function handleAttach(record: AuctionLot) {
+    if (!record.liveSessionId) {
+      Message.warning('请先进入直播场次控制台挂载拍品');
+      return;
+    }
     setAttachLoading(true);
     try {
-      await attachAuctionToLiveRoom(
+      await attachAuctionToLiveSession(
+        record.liveSessionId,
         record.auctionId,
-        buildIdempotencyKey('live-room-attach', record.auctionId)
+        buildIdempotencyKey('live-session-attach', record.auctionId)
       );
-      Message.success('已上架到直播间');
+      Message.success('已上架到直播场次');
       loadAuctionList();
     } catch (error) {
       // 已提示
@@ -293,29 +303,30 @@ export default function AuctionListPage() {
   }
 
   async function handleDetach(record: AuctionLot) {
-    if (!record.liveRoomId) {
+    const liveSessionId = record.liveSessionId;
+    if (!liveSessionId) {
       return;
     }
-    if (!canDetachAuctionFromLiveRoom(record.status)) {
+    if (!canDetachAuctionFromLiveSession(record.status)) {
       Message.warning('已成交拍品已计入直播交易，不能下架。');
       return;
     }
     Modal.confirm({
       title: '下架拍品',
-      content: '确定将该拍品从直播间下架吗？',
+      content: '确定将该拍品从直播场次下架吗？',
       okText: '下架',
       cancelText: '取消',
       onOk: async () => {
         try {
-          await detachAuctionFromLiveRoom(
-            record.liveRoomId!,
+          await detachAuctionFromLiveSession(
+            liveSessionId,
             record.auctionId,
             buildIdempotencyKey(
-              'live-room-detach',
-              `${record.liveRoomId}-${record.auctionId}`
+              'live-session-detach',
+              `${liveSessionId}-${record.auctionId}`
             )
           );
-          Message.success('已从直播间下架');
+          Message.success('已从直播场次下架');
           loadAuctionList();
         } catch (error) {
           // 已提示
@@ -330,25 +341,27 @@ export default function AuctionListPage() {
       dataIndex: 'auctionId',
       width: 330,
       render: (_: unknown, record: AuctionLot) => {
-        const item = items[String(record.itemId)];
         return (
           <div className={styles.entityCell}>
             <SafeImage
-              src={item?.images?.[0]}
-              alt={item?.title || '拍品'}
+              src={record.coverUrl || record.imageUrls?.[0]}
+              alt={record.title || '拍品'}
               className={styles.entityImage}
               width={64}
               height={64}
             />
             <Space direction="vertical" size={6}>
               <Typography.Text className={styles.entityTitle} ellipsis>
-                {item?.title || '未命名拍品'}
+                {record.title || '未命名拍品'}
               </Typography.Text>
               <div className={styles.entityMeta}>
-                <span>{item?.category || '未分类'}</span>
-                <span>{item?.brand || '未填写品牌'}</span>
-                {record.liveRoomId ? (
-                  <Tag color="green">已上架直播间</Tag>
+                <span>
+                  {formatAuctionCategory(record.category, categoryOptions) ||
+                    '未分类'}
+                </span>
+                <span>{record.brand || '未填写品牌'}</span>
+                {record.liveSessionId ? (
+                  <Tag color="green">已上架直播场次</Tag>
                 ) : (
                   <Tag>未上架</Tag>
                 )}
@@ -361,8 +374,21 @@ export default function AuctionListPage() {
     {
       title: '状态',
       dataIndex: 'status',
-      width: 140,
-      render: (value: AuctionStatus) => renderAuctionStatusTag(value),
+      width: 180,
+      render: (value: AuctionStatus, record: AuctionLot) => (
+        <Space direction="vertical" size={4}>
+          {renderAuctionStatusTag(value)}
+          {value === 'AUDIT_REJECTED' && record.auditRejectReason ? (
+            <Typography.Text
+              type="secondary"
+              style={{ fontSize: 12, maxWidth: 150 }}
+              ellipsis={{ showTooltip: true }}
+            >
+              原因：{record.auditRejectReason}
+            </Typography.Text>
+          ) : null}
+        </Space>
+      ),
     },
     {
       title: '起拍价',
@@ -374,7 +400,7 @@ export default function AuctionListPage() {
       title: '封顶价',
       dataIndex: 'capPrice',
       width: 120,
-      render: (value: number) => formatMoneyCent(value),
+      render: (value: number) => formatCapPrice(value),
     },
     {
       title: '保证金',
@@ -407,8 +433,8 @@ export default function AuctionListPage() {
           >
             编辑
           </Button>
-          {record.liveRoomId ? (
-            canDetachAuctionFromLiveRoom(record.status) ? (
+          {record.liveSessionId ? (
+            canDetachAuctionFromLiveSession(record.status) ? (
               <Button
                 type="text"
                 status="warning"
@@ -422,11 +448,11 @@ export default function AuctionListPage() {
           ) : (
             <Button
               type="text"
-              disabled={!canAttachAuctionToLiveRoom(record.status)}
+              disabled={!canAttachAuctionToLiveSession(record.status)}
               loading={attachLoading}
               onClick={() => handleAttach(record)}
             >
-              上架到直播间
+              上架到直播场次
             </Button>
           )}
         </Space>
@@ -459,9 +485,10 @@ export default function AuctionListPage() {
           onSubmit={handleSearch}
         >
           <Form.Item field="category" label="类目">
-            <Input
+            <Select
               allowClear
-              placeholder="输入商品类目"
+              placeholder="全部类目"
+              options={categoryOptions}
               style={{ width: 220 }}
             />
           </Form.Item>
@@ -505,7 +532,7 @@ export default function AuctionListPage() {
             subtitle={
               hasFilters
                 ? '可以调整类目、状态或时间排序后重试。'
-                : '先基于商品创建拍品，再上架到直播间开拍。'
+                : '创建拍品后，可直接上架到直播场次开拍。'
             }
             actionText={hasFilters ? '清空筛选' : '创建拍品'}
             onAction={

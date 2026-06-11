@@ -1,0 +1,283 @@
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e5]:
+      - generic [ref=e7]:
+        - img [ref=e8]
+        - generic [ref=e13]: 商家竞拍后台
+      - list [ref=e14]:
+        - listitem [ref=e15]:
+          - button [ref=e16] [cursor=pointer]:
+            - img [ref=e17]
+        - listitem [ref=e19]:
+          - generic [ref=e20] [cursor=pointer]:
+            - generic [ref=e23]: 商
+            - generic [ref=e25]: 商家001
+    - generic [ref=e26]:
+      - complementary [ref=e27]:
+        - generic [ref=e28]:
+          - menu [ref=e30]:
+            - generic [ref=e31]:
+              - generic [ref=e33] [cursor=pointer]:
+                - generic [ref=e34]:
+                  - img [ref=e36]
+                  - text: 我的直播间
+                - img [ref=e39]
+              - generic [ref=e42] [cursor=pointer]:
+                - generic [ref=e43]:
+                  - img [ref=e45]
+                  - text: 拍品管理
+                - img [ref=e48]
+              - generic [ref=e50]:
+                - generic [ref=e51] [cursor=pointer]:
+                  - generic [ref=e52]:
+                    - img [ref=e54]
+                    - text: 成交订单
+                  - img [ref=e57]
+                - menuitem "订单列表" [ref=e60] [cursor=pointer]:
+                  - generic [ref=e62]:
+                    - img [ref=e64]
+                    - text: 订单列表
+          - img [ref=e67] [cursor=pointer]
+      - generic [ref=e69]:
+        - generic [ref=e70]:
+          - list [ref=e72]:
+            - listitem [ref=e73]: 成交订单
+            - img [ref=e75]
+            - listitem [ref=e77]: 订单列表
+          - main [ref=e78]:
+            - generic [ref=e85]:
+              - heading "成交订单" [level=5] [ref=e89]
+              - generic [ref=e93]:
+                - generic [ref=e94]:
+                  - generic [ref=e96]: 订单状态
+                  - combobox [ref=e101] [cursor=pointer]:
+                    - generic [ref=e102]:
+                      - generic [ref=e103]:
+                        - textbox "全部状态"
+                        - generic [ref=e104]: 全部状态
+                      - img [ref=e107]
+                - generic [ref=e109]:
+                  - generic [ref=e111]: 中拍用户
+                  - textbox "输入中拍用户" [ref=e117]
+                - generic [ref=e123]:
+                  - button "查询" [ref=e125] [cursor=pointer]
+                  - button "重置" [ref=e127] [cursor=pointer]
+              - generic [ref=e133]:
+                - table [ref=e137]:
+                  - rowgroup [ref=e147]:
+                    - row "订单号 拍品 中拍用户 成交价 保证金 订单状态 更新时间 操作" [ref=e148]:
+                      - columnheader "订单号" [ref=e149]:
+                        - generic [ref=e150]: 订单号
+                      - columnheader "拍品" [ref=e151]:
+                        - generic [ref=e152]: 拍品
+                      - columnheader "中拍用户" [ref=e153]:
+                        - generic [ref=e154]: 中拍用户
+                      - columnheader "成交价" [ref=e155]:
+                        - generic [ref=e156]: 成交价
+                      - columnheader "保证金" [ref=e157]:
+                        - generic [ref=e158]: 保证金
+                      - columnheader "订单状态" [ref=e159]:
+                        - generic [ref=e160]: 订单状态
+                      - columnheader "更新时间" [ref=e161]:
+                        - generic [ref=e162]: 更新时间
+                      - columnheader "操作" [ref=e163]:
+                        - generic [ref=e164]: 操作
+                  - rowgroup [ref=e165]:
+                    - row "54506675372545 全链路烟测拍品 1780221003985 压测买家003 ¥101.00 ¥0.00 已创建 2026/05/31 17:50:04 查看详情" [ref=e166]:
+                      - cell "54506675372545" [ref=e167]:
+                        - generic [ref=e168]: "54506675372545"
+                      - cell "全链路烟测拍品 1780221003985" [ref=e169]:
+                        - generic [ref=e170]: 全链路烟测拍品 1780221003985
+                      - cell "压测买家003" [ref=e171]:
+                        - generic [ref=e172]: 压测买家003
+                      - cell "¥101.00" [ref=e173]:
+                        - generic [ref=e174]: ¥101.00
+                      - cell "¥0.00" [ref=e175]:
+                        - generic [ref=e176]: ¥0.00
+                      - cell "已创建" [ref=e177]:
+                        - generic [ref=e181]: 已创建
+                      - cell "2026/05/31 17:50:04" [ref=e182]:
+                        - generic [ref=e183]: 2026/05/31 17:50:04
+                      - cell "查看详情" [ref=e184]:
+                        - button "查看详情" [ref=e187] [cursor=pointer]
+                    - row "54505618407937 全链路烟测拍品 1780220752223 压测买家003 ¥101.00 ¥0.00 已超时 2026/05/31 18:05:57 查看详情" [ref=e188]:
+                      - cell "54505618407937" [ref=e189]:
+                        - generic [ref=e190]: "54505618407937"
+                      - cell "全链路烟测拍品 1780220752223" [ref=e191]:
+                        - generic [ref=e192]: 全链路烟测拍品 1780220752223
+                      - cell "压测买家003" [ref=e193]:
+                        - generic [ref=e194]: 压测买家003
+                      - cell "¥101.00" [ref=e195]:
+                        - generic [ref=e196]: ¥101.00
+                      - cell "¥0.00" [ref=e197]:
+                        - generic [ref=e198]: ¥0.00
+                      - cell "已超时" [ref=e199]:
+                        - generic [ref=e203]: 已超时
+                      - cell "2026/05/31 18:05:57" [ref=e204]:
+                        - generic [ref=e205]: 2026/05/31 18:05:57
+                      - cell "查看详情" [ref=e206]:
+                        - button "查看详情" [ref=e209] [cursor=pointer]
+                    - row "54504968290817 全链路烟测拍品 1780220597028 压测买家003 ¥101.00 ¥0.00 已超时 2026/05/31 18:03:27 查看详情" [ref=e210]:
+                      - cell "54504968290817" [ref=e211]:
+                        - generic [ref=e212]: "54504968290817"
+                      - cell "全链路烟测拍品 1780220597028" [ref=e213]:
+                        - generic [ref=e214]: 全链路烟测拍品 1780220597028
+                      - cell "压测买家003" [ref=e215]:
+                        - generic [ref=e216]: 压测买家003
+                      - cell "¥101.00" [ref=e217]:
+                        - generic [ref=e218]: ¥101.00
+                      - cell "¥0.00" [ref=e219]:
+                        - generic [ref=e220]: ¥0.00
+                      - cell "已超时" [ref=e221]:
+                        - generic [ref=e225]: 已超时
+                      - cell "2026/05/31 18:03:27" [ref=e226]:
+                        - generic [ref=e227]: 2026/05/31 18:03:27
+                      - cell "查看详情" [ref=e228]:
+                        - button "查看详情" [ref=e231] [cursor=pointer]
+                    - row "54502372016640 流程测试拍品 1780219917809 压测买家003 ¥101.00 ¥0.00 已超时 2026/05/31 17:52:59 查看详情" [ref=e232]:
+                      - cell "54502372016640" [ref=e233]:
+                        - generic [ref=e234]: "54502372016640"
+                      - cell "流程测试拍品 1780219917809" [ref=e235]:
+                        - generic [ref=e236]: 流程测试拍品 1780219917809
+                      - cell "压测买家003" [ref=e237]:
+                        - generic [ref=e238]: 压测买家003
+                      - cell "¥101.00" [ref=e239]:
+                        - generic [ref=e240]: ¥101.00
+                      - cell "¥0.00" [ref=e241]:
+                        - generic [ref=e242]: ¥0.00
+                      - cell "已超时" [ref=e243]:
+                        - generic [ref=e247]: 已超时
+                      - cell "2026/05/31 17:52:59" [ref=e248]:
+                        - generic [ref=e249]: 2026/05/31 17:52:59
+                      - cell "查看详情" [ref=e250]:
+                        - button "查看详情" [ref=e253] [cursor=pointer]
+                    - row "90004 清乾隆掐丝珐琅香炉 竞拍用户005 ¥7200.00 ¥600.00 已超时 2026/05/31 13:52:48 查看详情" [ref=e254]:
+                      - cell "90004" [ref=e255]:
+                        - generic [ref=e256]: "90004"
+                      - cell "清乾隆掐丝珐琅香炉" [ref=e257]:
+                        - generic [ref=e258]: 清乾隆掐丝珐琅香炉
+                      - cell "竞拍用户005" [ref=e259]:
+                        - generic [ref=e260]: 竞拍用户005
+                      - cell "¥7200.00" [ref=e261]:
+                        - generic [ref=e262]: ¥7200.00
+                      - cell "¥600.00" [ref=e263]:
+                        - generic [ref=e264]: ¥600.00
+                      - cell "已超时" [ref=e265]:
+                        - generic [ref=e269]: 已超时
+                      - cell "2026/05/31 13:52:48" [ref=e270]:
+                        - generic [ref=e271]: 2026/05/31 13:52:48
+                      - cell "查看详情" [ref=e272]:
+                        - button "查看详情" [ref=e275] [cursor=pointer]
+                    - row "90003 宋代影青刻花碗 竞拍用户004 ¥3200.00 ¥400.00 已超时 2026/05/31 13:52:48 查看详情" [ref=e276]:
+                      - cell "90003" [ref=e277]:
+                        - generic [ref=e278]: "90003"
+                      - cell "宋代影青刻花碗" [ref=e279]:
+                        - generic [ref=e280]: 宋代影青刻花碗
+                      - cell "竞拍用户004" [ref=e281]:
+                        - generic [ref=e282]: 竞拍用户004
+                      - cell "¥3200.00" [ref=e283]:
+                        - generic [ref=e284]: ¥3200.00
+                      - cell "¥400.00" [ref=e285]:
+                        - generic [ref=e286]: ¥400.00
+                      - cell "已超时" [ref=e287]:
+                        - generic [ref=e291]: 已超时
+                      - cell "2026/05/31 13:52:48" [ref=e292]:
+                        - generic [ref=e293]: 2026/05/31 13:52:48
+                      - cell "查看详情" [ref=e294]:
+                        - button "查看详情" [ref=e297] [cursor=pointer]
+                    - row "90002 老坑端砚一方 竞拍用户003 ¥1450.00 ¥150.00 已超时 2026/05/31 13:52:48 查看详情" [ref=e298]:
+                      - cell "90002" [ref=e299]:
+                        - generic [ref=e300]: "90002"
+                      - cell "老坑端砚一方" [ref=e301]:
+                        - generic [ref=e302]: 老坑端砚一方
+                      - cell "竞拍用户003" [ref=e303]:
+                        - generic [ref=e304]: 竞拍用户003
+                      - cell "¥1450.00" [ref=e305]:
+                        - generic [ref=e306]: ¥1450.00
+                      - cell "¥150.00" [ref=e307]:
+                        - generic [ref=e308]: ¥150.00
+                      - cell "已超时" [ref=e309]:
+                        - generic [ref=e313]: 已超时
+                      - cell "2026/05/31 13:52:48" [ref=e314]:
+                        - generic [ref=e315]: 2026/05/31 13:52:48
+                      - cell "查看详情" [ref=e316]:
+                        - button "查看详情" [ref=e319] [cursor=pointer]
+                    - row "90001 清代青花瓷小碗 竞拍用户001 ¥500.00 ¥80.00 已支付 2026/05/31 02:30:35 查看详情" [ref=e320]:
+                      - cell "90001" [ref=e321]:
+                        - generic [ref=e322]: "90001"
+                      - cell "清代青花瓷小碗" [ref=e323]:
+                        - generic [ref=e324]: 清代青花瓷小碗
+                      - cell "竞拍用户001" [ref=e325]:
+                        - generic [ref=e326]: 竞拍用户001
+                      - cell "¥500.00" [ref=e327]:
+                        - generic [ref=e328]: ¥500.00
+                      - cell "¥80.00" [ref=e329]:
+                        - generic [ref=e330]: ¥80.00
+                      - cell "已支付" [ref=e331]:
+                        - generic [ref=e335]: 已支付
+                      - cell "2026/05/31 02:30:35" [ref=e336]:
+                        - generic [ref=e337]: 2026/05/31 02:30:35
+                      - cell "查看详情" [ref=e338]:
+                        - button "查看详情" [ref=e341] [cursor=pointer]
+                - list [ref=e344]:
+                  - listitem "上一页" [ref=e345]:
+                    - img [ref=e346]
+                    - text: .
+                  - listitem "第 1 页" [ref=e348] [cursor=pointer]: "1"
+                  - listitem "下一页" [ref=e349]:
+                    - img [ref=e350]
+                    - text: .
+        - generic [ref=e84]: 商家竞拍后台
+  - generic [active] [ref=e357]:
+    - generic [ref=e359]: 订单详情
+    - img [ref=e361] [cursor=pointer]
+    - generic [ref=e364]:
+      - table [ref=e370]:
+        - rowgroup [ref=e371]:
+          - row "订单号 54506675372545" [ref=e372]:
+            - cell "订单号" [ref=e373]
+            - cell "54506675372545" [ref=e374]
+          - row "成交拍品 全链路烟测拍品 1780221003985" [ref=e375]:
+            - cell "成交拍品" [ref=e376]
+            - cell "全链路烟测拍品 1780221003985" [ref=e377]
+          - row "拍品类目 烟测类目" [ref=e378]:
+            - cell "拍品类目" [ref=e379]
+            - cell "烟测类目" [ref=e380]
+          - row "拍品品牌 --" [ref=e381]:
+            - cell "拍品品牌" [ref=e382]
+            - cell "--" [ref=e383]
+          - row "中拍用户 压测买家003" [ref=e384]:
+            - cell "中拍用户" [ref=e385]
+            - cell "压测买家003" [ref=e386]
+          - row "订单状态 已创建" [ref=e387]:
+            - cell "订单状态" [ref=e388]
+            - cell "已创建" [ref=e389]:
+              - generic [ref=e391]: 已创建
+      - generic [ref=e395]:
+        - table [ref=e399]:
+          - rowgroup [ref=e400]:
+            - row "成交价 ¥101.00" [ref=e401]:
+              - cell "成交价" [ref=e402]
+              - cell "¥101.00" [ref=e403]
+            - row "保证金金额 ¥0.00" [ref=e404]:
+              - cell "保证金金额" [ref=e405]
+              - cell "¥0.00" [ref=e406]
+        - table [ref=e410]:
+          - rowgroup [ref=e411]:
+            - row "支付截止时间 2026/05/31 18:10:04" [ref=e412]:
+              - cell "支付截止时间" [ref=e413]
+              - cell "2026/05/31 18:10:04" [ref=e414]
+            - row "支付时间 --" [ref=e415]:
+              - cell "支付时间" [ref=e416]
+              - cell "--" [ref=e417]
+      - table [ref=e423]:
+        - rowgroup [ref=e424]:
+          - row "创建时间 2026/05/31 17:50:04" [ref=e425]:
+            - cell "创建时间" [ref=e426]
+            - cell "2026/05/31 17:50:04" [ref=e427]
+          - row "更新时间 2026/05/31 17:50:04" [ref=e428]:
+            - cell "更新时间" [ref=e429]
+            - cell "2026/05/31 17:50:04" [ref=e430]
+          - row "关闭时间 --" [ref=e431]:
+            - cell "关闭时间" [ref=e432]
+            - cell "--" [ref=e433]

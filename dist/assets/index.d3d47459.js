@@ -1,0 +1,1 @@
+import{a as r,j as e}from"./index.ba9976c8.js";import{C as i,T as a}from"./index.c4255798.js";function n(){return r(i,{style:{height:"80vh"},children:[e(a.Title,{heading:6,children:"This is a very basic and simple page"}),e(a.Text,{children:"You can add content here :)"})]})}export{n as default};

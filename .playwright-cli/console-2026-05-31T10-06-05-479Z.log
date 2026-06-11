@@ -1,0 +1,6 @@
+[     204ms] [LOG] [vite] connecting... @ http://localhost:3030/@vite/client:183
+[     214ms] [LOG] [vite] connected. @ http://localhost:3030/@vite/client:211
+[     490ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:3030/login:0
+[    6295ms] [LOG] [vite] connecting... @ http://localhost:3030/@vite/client:183
+[    6302ms] [LOG] [vite] connected. @ http://localhost:3030/@vite/client:211
+[    6927ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3030/api/v1/images/smoke-test.jpg:0

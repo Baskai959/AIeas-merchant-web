@@ -15,6 +15,7 @@ export const AUCTION_STATUS_OPTIONS: Array<{
 }> = [
   { label: '草稿', value: 'DRAFT' },
   { label: '待审核', value: 'PENDING_AUDIT' },
+  { label: '审核未通过', value: 'AUDIT_REJECTED' },
   { label: '待开拍', value: 'READY' },
   { label: '预热中', value: 'WARMING_UP' },
   { label: '竞拍中', value: 'RUNNING' },
@@ -25,15 +26,65 @@ export const AUCTION_STATUS_OPTIONS: Array<{
   { label: '已结算', value: 'SETTLED' },
 ];
 
+export const AUCTION_CATEGORY_OPTIONS = [
+  { label: '珠宝玉石', value: 'jewelry' },
+  { label: '腕表钟表', value: 'watch' },
+  { label: '工艺收藏', value: 'craft' },
+  { label: '潮流配饰', value: 'fashion' },
+  { label: '茶酒滋补', value: 'tea' },
+  { label: '数码潮玩', value: 'digital' },
+  { label: '书画篆刻', value: 'painting' },
+  { label: '瓷器陶艺', value: 'ceramic' },
+  { label: '名酒陈酿', value: 'wine' },
+  { label: '箱包皮具', value: 'bag' },
+  { label: '钱币邮票', value: 'coin' },
+  { label: '古典家具', value: 'furniture' },
+  { label: '影像器材', value: 'camera' },
+  { label: '乐器音响', value: 'music' },
+  { label: '户外收藏', value: 'outdoor' },
+];
+
+export type AuctionCategoryOption = (typeof AUCTION_CATEGORY_OPTIONS)[number];
+
+export function normalizeAuctionCategory(
+  value?: string | null,
+  options: AuctionCategoryOption[] = AUCTION_CATEGORY_OPTIONS
+) {
+  const normalizedValue = value?.trim();
+  if (!normalizedValue) {
+    return '';
+  }
+  const category = options.find(
+    (item) => item.value === normalizedValue || item.label === normalizedValue
+  );
+  return category?.value || normalizedValue;
+}
+
+export function formatAuctionCategory(
+  value?: string | null,
+  options: AuctionCategoryOption[] = AUCTION_CATEGORY_OPTIONS
+) {
+  const normalizedValue = value?.trim();
+  if (!normalizedValue) {
+    return '';
+  }
+  const category = options.find(
+    (item) => item.value === normalizedValue || item.label === normalizedValue
+  );
+  return category?.label || normalizedValue;
+}
+
 export const AUCTION_EDITABLE_STATUS: AuctionStatus[] = [
   'DRAFT',
   'PENDING_AUDIT',
+  'AUDIT_REJECTED',
   'READY',
 ];
 
 const AUCTION_STATUS_COLOR_MAP: Record<AuctionStatus, string> = {
   DRAFT: 'gray',
   PENDING_AUDIT: 'orange',
+  AUDIT_REJECTED: 'red',
   READY: 'arcoblue',
   WARMING_UP: 'purple',
   RUNNING: 'green',
@@ -47,6 +98,7 @@ const AUCTION_STATUS_COLOR_MAP: Record<AuctionStatus, string> = {
 const AUCTION_STATUS_LABEL_MAP: Record<AuctionStatus, string> = {
   DRAFT: '草稿',
   PENDING_AUDIT: '待审核',
+  AUDIT_REJECTED: '审核未通过',
   READY: '待开拍',
   WARMING_UP: '预热中',
   RUNNING: '竞拍中',
@@ -61,7 +113,7 @@ export function canEditAuctionRules(status?: AuctionStatus) {
   return !!status && AUCTION_EDITABLE_STATUS.includes(status);
 }
 
-export function canAttachAuctionToLiveRoom(status?: AuctionStatus) {
+export function canAttachAuctionToLiveSession(status?: AuctionStatus) {
   return status === 'READY';
 }
 
@@ -75,8 +127,12 @@ export function isAuctionLiveInProgress(status?: AuctionStatus) {
   );
 }
 
-export function canDetachAuctionFromLiveRoom(status?: AuctionStatus) {
-  return !isAuctionSuccessful(status) && !isAuctionLiveInProgress(status);
+export function canDetachAuctionFromLiveSession(status?: AuctionStatus) {
+  return (
+    status !== 'WARMING_UP' &&
+    !isAuctionSuccessful(status) &&
+    !isAuctionLiveInProgress(status)
+  );
 }
 
 export function canRestartAuctionAfterCancel(status?: AuctionStatus) {
@@ -95,10 +151,16 @@ export function formatDateTime(value?: string | null) {
   if (!value) {
     return '-';
   }
+  if (value.startsWith('0001-01-01')) {
+    return '-';
+  }
 
   const parsedValue = new Date(value);
   if (Number.isNaN(parsedValue.getTime())) {
     return value;
+  }
+  if (parsedValue.getUTCFullYear() <= 1) {
+    return '-';
   }
 
   return parsedValue.toLocaleString('zh-CN', {
@@ -112,6 +174,13 @@ export function formatMoneyCent(value?: number | null) {
   }
 
   return `¥${(value / 100).toFixed(2)}`;
+}
+
+export function formatCapPrice(value?: number | null) {
+  if (value === null || value === undefined || value <= 0) {
+    return '不封顶';
+  }
+  return formatMoneyCent(value);
 }
 
 export function yuanToCent(value?: number | string) {

@@ -1,33 +1,30 @@
-import { useContext } from 'react';
+import React, { useState } from 'react';
+import { Avatar, Dropdown, Menu, Space } from '@arco-design/web-react';
 import {
-  Tooltip,
-  Avatar,
-  Dropdown,
-  Menu,
-  Space,
-} from '@arco-design/web-react';
-import {
-  IconSunFill,
-  IconMoonFill,
   IconUser,
   IconSettings,
   IconPoweroff,
 } from '@arco-design/web-react/icon';
-import { GlobalContext } from '@/context';
 import useLocale from '@/utils/useLocale';
-import Logo from '@/assets/logo.svg';
-import IconButton from './IconButton';
+import Logo from '@/assets/logo.png';
 import styles from './style/index.module.less';
 import { redirectToLogin } from '@/services/http/storage';
 import { useSessionStore } from '@/store';
+import UserSettingsModal from './UserSettingsModal';
 
 function Navbar({ show }: { show: boolean }) {
   const t = useLocale();
+  const [settingsVisible, setSettingsVisible] = useState(false);
   const userInfo = useSessionStore((state) => state.user);
+  const setUser = useSessionStore((state) => state.setUser);
   const logout = useSessionStore((state) => state.logout);
-  const { theme, setTheme } = useContext(GlobalContext);
+  const avatarUrl = userInfo?.avatarUrl || userInfo?.avatar || '';
 
   async function onMenuItemClick(key: string) {
+    if (key === 'setting') {
+      setSettingsVisible(true);
+      return;
+    }
     if (key === 'logout') {
       await logout();
       redirectToLogin();
@@ -55,38 +52,38 @@ function Navbar({ show }: { show: boolean }) {
     <div className={styles.navbar}>
       <div className={styles.left}>
         <div className={styles.logo}>
-          <Logo />
+          <img className={styles['logo-mark']} src={Logo} alt="商家竞拍后台" />
           <div className={styles['logo-name']}>商家竞拍后台</div>
         </div>
       </div>
       <ul className={styles.right}>
-        <li>
-          <Tooltip
-            content={
-              theme === 'light'
-                ? t['settings.navbar.theme.toDark']
-                : t['settings.navbar.theme.toLight']
-            }
-          >
-            <IconButton
-              icon={theme !== 'dark' ? <IconMoonFill /> : <IconSunFill />}
-              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-            />
-          </Tooltip>
-        </li>
         {userInfo && (
           <li>
             <Dropdown droplist={droplist} position="br">
-              <Space size={8} style={{ cursor: 'pointer' }}>
+              <Space
+                size={8}
+                className={styles['user-profile']}
+                style={{ cursor: 'pointer' }}
+              >
                 <Avatar size={32}>
-                  {userInfo.nickname?.slice(0, 1) || <IconUser />}
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt={userInfo.nickname} />
+                  ) : (
+                    userInfo.nickname?.slice(0, 1) || <IconUser />
+                  )}
                 </Avatar>
-                <span>{userInfo.nickname}</span>
+                <span className={styles.username}>{userInfo.nickname}</span>
               </Space>
             </Dropdown>
           </li>
         )}
       </ul>
+      <UserSettingsModal
+        visible={settingsVisible}
+        user={userInfo}
+        onCancel={() => setSettingsVisible(false)}
+        onUpdated={setUser}
+      />
     </div>
   );
 }

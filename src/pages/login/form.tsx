@@ -1,13 +1,7 @@
-import {
-  Form,
-  Input,
-  Checkbox,
-  Button,
-  Space,
-} from '@arco-design/web-react';
+import { Form, Input, Checkbox, Button, Space } from '@arco-design/web-react';
 import { FormInstance } from '@arco-design/web-react/es/Form';
 import { IconLock, IconUser } from '@arco-design/web-react/icon';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import useStorage from '@/utils/useStorage';
 import useLocale from '@/utils/useLocale';
@@ -27,8 +21,9 @@ export default function LoginForm() {
   const history = useHistory();
   const login = useSessionStore((state) => state.login);
   const loading = useSessionStore((state) => state.authLoading);
-  const [savedLogin, setSavedLogin, removeSavedLogin] =
-    useStorage('merchant-login-account');
+  const [savedLogin, setSavedLogin, removeSavedLogin] = useStorage(
+    'merchant-login-account'
+  );
 
   const t = useLocale(locale);
 
@@ -43,10 +38,7 @@ export default function LoginForm() {
     removeSavedLogin();
   }
 
-  async function handleLogin(values: {
-    account: string;
-    password: string;
-  }) {
+  async function handleLogin(values: { account: string; password: string }) {
     setErrorMessage('');
     try {
       await login({
@@ -84,9 +76,13 @@ export default function LoginForm() {
 
   return (
     <div className={styles['login-form-wrapper']}>
-      <div className={styles['login-form-title']}>{t['login.form.title']}</div>
-      <div className={styles['login-form-sub-title']}>
-        {t['login.form.subtitle']}
+      <div className={styles['login-form-heading']}>
+        <div className={styles['login-form-title']}>
+          {t['login.form.title']}
+        </div>
+        <div className={styles['login-form-sub-title']}>
+          {t['login.form.subtitle']}
+        </div>
       </div>
       <div className={styles['login-form-error-msg']}>{errorMessage}</div>
       <Form
@@ -97,6 +93,7 @@ export default function LoginForm() {
       >
         <Form.Item
           field="account"
+          label={t['login.form.account.label']}
           rules={[{ required: true, message: t['login.form.account.errMsg'] }]}
         >
           <Input
@@ -107,6 +104,7 @@ export default function LoginForm() {
         </Form.Item>
         <Form.Item
           field="password"
+          label={t['login.form.password.label']}
           rules={[{ required: true, message: t['login.form.password.errMsg'] }]}
         >
           <Input.Password
@@ -121,9 +119,18 @@ export default function LoginForm() {
               {t['login.form.rememberAccount']}
             </Checkbox>
           </div>
-          <Button type="primary" long onClick={onSubmitClick} loading={loading}>
+          <Button
+            className={styles['login-submit-button']}
+            type="primary"
+            long
+            onClick={onSubmitClick}
+            loading={loading}
+          >
             {t['login.form.login']}
           </Button>
+          <div className={styles['login-form-note']}>
+            {t['login.form.securityNote']}
+          </div>
         </Space>
       </Form>
     </div>

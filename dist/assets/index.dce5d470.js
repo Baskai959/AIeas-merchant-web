@@ -1,0 +1,1 @@
+import{a as e,S as t,j as s}from"./index.ba9976c8.js";import{T as c}from"./index.c4255798.js";function p(i){const{title:r,extra:a,children:n}=i;return e(t,{direction:"vertical",size:16,style:{width:"100%"},children:[e(t,{align:"center",wrap:!0,style:{width:"100%",justifyContent:"space-between"},children:[s(c.Title,{heading:5,style:{margin:0},children:r}),a]}),n]})}export{p as A};

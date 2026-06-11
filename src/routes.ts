@@ -14,44 +14,44 @@ export type IRoute = AuthParams & {
 
 export const routes: IRoute[] = [
   {
-    name: 'menu.liveRooms',
-    key: 'live-rooms',
+    name: 'menu.liveSessions',
+    key: 'live-sessions',
     children: [
       {
-        name: 'menu.liveRooms.list',
-        key: 'live-rooms/list',
-        path: '/live-rooms',
-        requiredPermissions: [{ resource: 'live-rooms', actions: ['read'] }],
+        name: 'menu.liveSessions.list',
+        key: 'live-sessions/list',
+        path: '/live-sessions',
+        requiredPermissions: [{ resource: 'live-sessions', actions: ['read'] }],
       },
       {
-        name: 'menu.liveRooms.workbench',
-        key: 'live-rooms/workbench',
-        path: '/live-rooms/:id/workbench',
+        name: 'menu.liveSessions.workbench',
+        key: 'live-sessions/workbench',
+        path: '/live-sessions/:id/workbench',
         ignore: true,
-        requiredPermissions: [{ resource: 'live-rooms', actions: ['read'] }],
+        requiredPermissions: [{ resource: 'live-sessions', actions: ['read'] }],
       },
       {
-        name: 'menu.liveRooms.sessions',
-        key: 'live-rooms/sessions',
-        path: '/live-rooms/:id/sessions',
+        name: 'menu.liveSessions.records',
+        key: 'live-sessions/records',
+        path: '/live-sessions/:id/records',
         ignore: true,
-        requiredPermissions: [{ resource: 'live-rooms', actions: ['read'] }],
+        requiredPermissions: [{ resource: 'live-sessions', actions: ['read'] }],
       },
       {
-        name: 'menu.liveRooms.control',
-        key: 'live-rooms/control',
-        path: '/live-rooms/:id/control',
+        name: 'menu.liveSessions.control',
+        key: 'live-sessions/control',
+        path: '/live-sessions/:id/control',
         ignore: true,
-        requiredPermissions: [{ resource: 'live-rooms', actions: ['read'] }],
+        requiredPermissions: [{ resource: 'live-sessions', actions: ['read'] }],
       },
     ],
   },
   {
-    name: 'menu.liveRooms.sessionDetail',
+    name: 'menu.liveSessions.sessionDetail',
     key: 'live-sessions/detail',
     path: '/live-sessions/:sessionId',
     ignore: true,
-    requiredPermissions: [{ resource: 'live-rooms', actions: ['read'] }],
+    requiredPermissions: [{ resource: 'live-sessions', actions: ['read'] }],
   },
   {
     name: 'menu.auctions',
@@ -92,38 +92,6 @@ export const routes: IRoute[] = [
     ],
   },
   {
-    name: 'menu.items',
-    key: 'items',
-    children: [
-      {
-        name: 'menu.items.list',
-        key: 'items/list',
-        requiredPermissions: [{ resource: 'items', actions: ['read'] }],
-      },
-      {
-        name: 'menu.items.create',
-        key: 'items/create',
-        path: '/items/create',
-        ignore: true,
-        requiredPermissions: [{ resource: 'items', actions: ['write'] }],
-      },
-      {
-        name: 'menu.items.detail',
-        key: 'items/detail',
-        path: '/items/:id',
-        ignore: true,
-        requiredPermissions: [{ resource: 'items', actions: ['read'] }],
-      },
-      {
-        name: 'menu.items.edit',
-        key: 'items/edit',
-        path: '/items/:id/edit',
-        ignore: true,
-        requiredPermissions: [{ resource: 'items', actions: ['write'] }],
-      },
-    ],
-  },
-  {
     name: 'menu.orders',
     key: 'orders',
     children: [
@@ -137,6 +105,7 @@ export const routes: IRoute[] = [
   {
     name: 'menu.auditLogs',
     key: 'audit-logs',
+    ignore: true,
     requiredPermissions: [{ resource: 'audit-logs', actions: ['read'] }],
   },
 ];
@@ -144,9 +113,8 @@ export const routes: IRoute[] = [
 export function generatePermission(role?: string): PermissionMap {
   if (role === 'merchant') {
     return {
-      items: ['read', 'write'],
       auctions: ['read', 'write'],
-      'live-rooms': ['read', 'write'],
+      'live-sessions': ['read', 'write'],
       orders: ['read'],
       'audit-logs': ['read'],
     };

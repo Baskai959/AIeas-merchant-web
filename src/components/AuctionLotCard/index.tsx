@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Tag, Space } from '@arco-design/web-react';
 import { AuctionLot, AuctionStatus } from '@/services/auctions';
-import { Item } from '@/services/items';
 import SafeImage from '../SafeImage';
 import {
   canRestartAuctionAfterCancel,
+  formatAuctionCategory,
+  formatCapPrice,
+  formatDateTime,
   formatIncrementRuleSummary,
   formatMoneyCent,
   isAuctionSuccessful,
@@ -14,8 +16,6 @@ import styles from './index.module.less';
 export interface AuctionLotCardProps {
   index: number;
   lot: AuctionLot;
-  itemTitle?: string;
-  item?: Item;
   isLive: boolean;
   isActive: boolean;
   disableStart?: boolean;
@@ -38,17 +38,11 @@ const DEFAULT_TAGS = [
   { label: '竞拍', color: '#F53F3F', bg: '#FFECE8' },
 ];
 
-function getItemImage(item?: Item) {
-  if (!item || !item.images || !item.images.length) {
-    return undefined;
-  }
-  return item.images[0];
+function getLotImage(lot: AuctionLot) {
+  return lot.coverUrl || lot.imageUrls?.[0];
 }
 
-function deriveTags(item?: Item) {
-  if (!item) {
-    return DEFAULT_TAGS;
-  }
+function deriveTags() {
   return DEFAULT_TAGS;
 }
 
@@ -81,8 +75,6 @@ export default function AuctionLotCard(props: AuctionLotCardProps) {
   const {
     index,
     lot,
-    itemTitle,
-    item,
     isLive,
     isActive,
     disableStart,
@@ -112,15 +104,18 @@ export default function AuctionLotCard(props: AuctionLotCardProps) {
 
   const isClosed = CLOSED_STATUSES.includes(lot.status);
   const isSuccessful = isAuctionSuccessful(lot.status);
+  const isScheduled = lot.status === 'WARMING_UP' && !isActive;
   const canRestart = canRestartAuctionAfterCancel(lot.status);
-  const canShowStartAction = !isActive && !isSuccessful;
+  const canShowStartAction =
+    !!onStart && !isActive && !isSuccessful && !isScheduled;
   const showLiveBadge = isActive || ACTIVE_STATUSES.includes(lot.status);
+  const showScheduledBadge = isScheduled && !showLiveBadge;
   const showDoneBadge = isClosed && !showLiveBadge;
   const doneBadgeText = lot.status === 'CLOSED_FAILED' ? '已取消' : '已成交';
 
   const incrementDisplay = formatIncrementRuleSummary(lot.incrementRule);
 
-  const capPriceDisplay = formatMoneyCent(lot.capPrice);
+  const capPriceDisplay = formatCapPrice(lot.capPrice);
   const startPriceDisplay = formatMoneyCent(lot.startPrice);
 
   const dealOrCurrent = (() => {
@@ -133,19 +128,19 @@ export default function AuctionLotCard(props: AuctionLotCardProps) {
     if (isActive) {
       return {
         label: '当前出价',
-        value: formatMoneyCent(lot.dealPrice ?? lot.startPrice),
+        value: formatMoneyCent(
+          lot.currentPrice ?? lot.dealPrice ?? lot.startPrice
+        ),
       };
     }
     return { label: '当前出价', value: '--' };
   })();
 
   const bidCount = lot.bidCount ?? 0;
-  const tags = deriveTags(item);
-  const imageUrl = getItemImage(item);
-  const title = itemTitle || item?.title || '未命名拍品';
-  const sellPoint = item
-    ? item.description?.trim() || '暂未填写商品卖点'
-    : '商品信息加载中';
+  const tags = deriveTags();
+  const imageUrl = getLotImage(lot);
+  const title = lot.title || '未命名拍品';
+  const sellPoint = lot.subtitle?.trim() || lot.description?.trim() || '暂未填写拍品卖点';
 
   const remainingText = (() => {
     if (!isActive || !lot.endTime) {
@@ -153,6 +148,8 @@ export default function AuctionLotCard(props: AuctionLotCardProps) {
     }
     return formatRemaining(new Date(lot.endTime).getTime() - now);
   })();
+  const scheduledText =
+    isScheduled && lot.startTime ? `预约 ${formatDateTime(lot.startTime)}` : '';
 
   return (
     <div className={styles.card}>
@@ -172,6 +169,10 @@ export default function AuctionLotCard(props: AuctionLotCardProps) {
             <div className={`${styles.statusBadge} ${styles.badgeLive}`}>
               讲解中
             </div>
+          ) : showScheduledBadge ? (
+            <div className={`${styles.statusBadge} ${styles.badgeScheduled}`}>
+              已预约
+            </div>
           ) : showDoneBadge ? (
             <div className={`${styles.statusBadge} ${styles.badgeDone}`}>
               {doneBadgeText}
@@ -184,7 +185,7 @@ export default function AuctionLotCard(props: AuctionLotCardProps) {
           <div className={styles.title} title={title}>
             {title}
           </div>
-          <div className={styles.id}>{item?.category || '直播拍品'}</div>
+          <div className={styles.id}>{formatAuctionCategory(lot.category) || '直播拍品'}</div>
           <div className={styles.tagRow}>
             {tags.map((tag) => (
               <span
@@ -227,6 +228,8 @@ export default function AuctionLotCard(props: AuctionLotCardProps) {
             <div className={styles.colValue}>{bidCount}</div>
             {isActive && remainingText ? (
               <div className={styles.colCountdown}>竞拍中 {remainingText}</div>
+            ) : scheduledText ? (
+              <div className={styles.colCountdown}>{scheduledText}</div>
             ) : null}
           </div>
         </div>
@@ -235,10 +238,14 @@ export default function AuctionLotCard(props: AuctionLotCardProps) {
         {isLive ? (
           <Space>
             <Button size="small" onClick={onProduct}>
-              商品
+              拍品
             </Button>
             {isActive ? (
               <Tag color="red">竞拍中</Tag>
+            ) : isScheduled ? (
+              <Tag color="purple">已预约</Tag>
+            ) : isSuccessful ? (
+              <Tag color="green">已成交</Tag>
             ) : canShowStartAction ? (
               <Button
                 size="small"
@@ -249,12 +256,10 @@ export default function AuctionLotCard(props: AuctionLotCardProps) {
               >
                 {canRestart ? '重新开拍' : '开拍'}
               </Button>
-            ) : (
-              <Tag color="green">已成交</Tag>
-            )}
-            {isActive ? (
+            ) : null}
+            {isActive || isScheduled ? (
               <Button size="small" onClick={onCancelExplain}>
-                取消讲解
+                {isScheduled ? '取消预约' : '取消讲解'}
               </Button>
             ) : isSuccessful ? null : (
               <Button
@@ -267,7 +272,9 @@ export default function AuctionLotCard(props: AuctionLotCardProps) {
                 下架
               </Button>
             )}
-            {canRestart ? <Tag color="orange">可重新开拍</Tag> : null}
+            {canShowStartAction && canRestart ? (
+              <Tag color="orange">可重新开拍</Tag>
+            ) : null}
             {onExplain ? (
               <Button size="small" onClick={onExplain}>
                 讲解
@@ -282,7 +289,7 @@ export default function AuctionLotCard(props: AuctionLotCardProps) {
         ) : (
           <Space>
             <Button size="small" onClick={onProduct}>
-              商品
+              拍品
             </Button>
             <Button size="small" type="primary" onClick={onAttach}>
               上架到直播间

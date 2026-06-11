@@ -14,7 +14,6 @@ import {
   IconFire,
   IconMenuFold,
   IconMenuUnfold,
-  IconStorage,
   IconTags,
   IconTrophy,
   IconVideoCamera,
@@ -45,11 +44,11 @@ function getIconFromKey(key: string) {
     string,
     { icon: React.ReactNode; className: string }
   > = {
-    'live-rooms': {
+    'live-sessions': {
       icon: <IconVideoCamera {...iconProps} />,
       className: styles['icon-live'],
     },
-    'live-rooms/list': {
+    'live-sessions/list': {
       icon: <IconVideoCamera {...iconProps} />,
       className: styles['icon-live'],
     },
@@ -60,14 +59,6 @@ function getIconFromKey(key: string) {
     'auctions/list': {
       icon: <IconFire {...iconProps} />,
       className: styles['icon-auction-list'],
-    },
-    items: {
-      icon: <IconStorage {...iconProps} />,
-      className: styles['icon-item'],
-    },
-    'items/list': {
-      icon: <IconStorage {...iconProps} />,
-      className: styles['icon-item'],
     },
     orders: {
       icon: <IconFile {...iconProps} />,

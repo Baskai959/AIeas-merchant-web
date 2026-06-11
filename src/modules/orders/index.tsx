@@ -7,6 +7,8 @@ import {
   Form,
   Grid,
   Input,
+  Message,
+  Modal,
   Select,
   Space,
   Table,
@@ -19,9 +21,12 @@ import {
   getOrderDetail,
   listOrders,
   OrderDeal,
+  OrderFulfillmentStatus,
   OrderPayStatus,
   OrderStatus,
+  shipOrder,
 } from '@/services/orders';
+import { buildIdempotencyKey } from '@/modules/auctions/utils';
 
 const FormItem = Form.Item;
 const Row = Grid.Row;
@@ -114,10 +119,40 @@ function renderPayStatus(status: OrderPayStatus) {
   return <Tag color={colorMap[status]}>{labelMap[status]}</Tag>;
 }
 
+function renderFulfillmentStatus(status?: OrderFulfillmentStatus) {
+  const normalized = status || 'UNSHIPPED';
+  const colorMap: Record<OrderFulfillmentStatus, string> = {
+    UNSHIPPED: 'orange',
+    SHIPPED: 'arcoblue',
+    RECEIVED: 'green',
+  };
+  const labelMap: Record<OrderFulfillmentStatus, string> = {
+    UNSHIPPED: '待发货',
+    SHIPPED: '已发货',
+    RECEIVED: '已收货',
+  };
+
+  return <Tag color={colorMap[normalized]}>{labelMap[normalized]}</Tag>;
+}
+
+function getWinnerDisplayName(order?: OrderDeal | null) {
+  return order?.winnerNickname?.trim() || '匿名用户';
+}
+
+function canShipOrder(order: OrderDeal) {
+  return (
+    order.status === 'PAID' &&
+    order.payStatus === 'PAID' &&
+    (order.fulfillmentStatus || 'UNSHIPPED') === 'UNSHIPPED'
+  );
+}
+
 export default function OrderListPage() {
   const [winnerIdInput, setWinnerIdInput] = useState('');
   const [statusInput, setStatusInput] = useState<OrderStatus | undefined>();
-  const [payStatusInput, setPayStatusInput] = useState<OrderPayStatus | undefined>();
+  const [payStatusInput, setPayStatusInput] = useState<
+    OrderPayStatus | undefined
+  >();
   const [winnerId, setWinnerId] = useState('');
   const [status, setStatus] = useState<OrderStatus | undefined>();
   const [payStatus, setPayStatus] = useState<OrderPayStatus | undefined>();
@@ -130,6 +165,7 @@ export default function OrderListPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState('');
   const [detail, setDetail] = useState<OrderDeal | null>(null);
+  const [shippingOrderId, setShippingOrderId] = useState<string | number>();
 
   const loadOrders = useCallback(async () => {
     setLoading(true);
@@ -161,6 +197,52 @@ export default function OrderListPage() {
     loadOrders();
   }, [loadOrders]);
 
+  const handleOpenDetail = useCallback(async (record: OrderDeal) => {
+    setDetailVisible(true);
+    setDetailLoading(true);
+    setDetailError('');
+    try {
+      const nextDetail = await getOrderDetail(record.id);
+      setDetail(nextDetail);
+    } catch (detailFetchError) {
+      setDetail(null);
+      setDetailError(getErrorMessage(detailFetchError));
+    } finally {
+      setDetailLoading(false);
+    }
+  }, []);
+
+  const handleShip = useCallback((record: OrderDeal) => {
+    Modal.confirm({
+      title: '确认发货',
+      content: `确认将订单 ${record.id} 标记为已发货？`,
+      okText: '确认发货',
+      cancelText: '取消',
+      onOk: async () => {
+        setShippingOrderId(record.id);
+        try {
+          const updatedOrder = await shipOrder(
+            record.id,
+            buildIdempotencyKey('order-ship', record.id)
+          );
+          setOrders((current) =>
+            current.map((item) =>
+              item.id === updatedOrder.id ? updatedOrder : item
+            )
+          );
+          setDetail((current) =>
+            current?.id === updatedOrder.id ? updatedOrder : current
+          );
+          Message.success('发货成功');
+        } catch (shipError) {
+          Message.error(getErrorMessage(shipError));
+        } finally {
+          setShippingOrderId(undefined);
+        }
+      },
+    });
+  }, []);
+
   const columns = useMemo(
     () => [
       {
@@ -169,9 +251,17 @@ export default function OrderListPage() {
         width: 170,
       },
       {
+        title: '拍品',
+        dataIndex: 'lotSnapshot',
+        width: 180,
+        render: (_: unknown, record: OrderDeal) =>
+          record.lotSnapshot?.title || `拍品 ${record.auctionId}`,
+      },
+      {
         title: '中拍用户',
-        dataIndex: 'winnerId',
+        dataIndex: 'winnerNickname',
         width: 140,
+        render: (_: unknown, record: OrderDeal) => getWinnerDisplayName(record),
       },
       {
         title: '成交价',
@@ -198,6 +288,13 @@ export default function OrderListPage() {
         render: (value: OrderPayStatus) => renderPayStatus(value),
       },
       {
+        title: '履约状态',
+        dataIndex: 'fulfillmentStatus',
+        width: 120,
+        render: (value: OrderFulfillmentStatus | undefined) =>
+          renderFulfillmentStatus(value),
+      },
+      {
         title: '更新时间',
         dataIndex: 'updatedAt',
         width: 180,
@@ -206,32 +303,28 @@ export default function OrderListPage() {
       {
         title: '操作',
         dataIndex: 'operations',
-        width: 100,
+        width: 170,
         fixed: 'right' as const,
         render: (_: unknown, record: OrderDeal) => (
-          <Button
-            type="text"
-            onClick={async () => {
-              setDetailVisible(true);
-              setDetailLoading(true);
-              setDetailError('');
-              try {
-                const nextDetail = await getOrderDetail(record.id);
-                setDetail(nextDetail);
-              } catch (detailFetchError) {
-                setDetail(null);
-                setDetailError(getErrorMessage(detailFetchError));
-              } finally {
-                setDetailLoading(false);
-              }
-            }}
-          >
-            查看详情
-          </Button>
+          <Space>
+            <Button type="text" onClick={() => handleOpenDetail(record)}>
+              查看详情
+            </Button>
+            {canShipOrder(record) ? (
+              <Button
+                type="text"
+                status="success"
+                loading={shippingOrderId === record.id}
+                onClick={() => handleShip(record)}
+              >
+                发货
+              </Button>
+            ) : null}
+          </Space>
         ),
       },
     ],
-    []
+    [handleOpenDetail, handleShip, shippingOrderId]
   );
 
   return (
@@ -245,7 +338,9 @@ export default function OrderListPage() {
               style={{ width: 160 }}
               value={statusInput}
               options={orderStatusOptions}
-              onChange={(value) => setStatusInput(value as OrderStatus | undefined)}
+              onChange={(value) =>
+                setStatusInput(value as OrderStatus | undefined)
+              }
             />
           </FormItem>
           <FormItem label="支付状态">
@@ -255,7 +350,9 @@ export default function OrderListPage() {
               style={{ width: 160 }}
               value={payStatusInput}
               options={payStatusOptions}
-              onChange={(value) => setPayStatusInput(value as OrderPayStatus | undefined)}
+              onChange={(value) =>
+                setPayStatusInput(value as OrderPayStatus | undefined)
+              }
             />
           </FormItem>
           <FormItem label="中拍用户">
@@ -352,7 +449,9 @@ export default function OrderListPage() {
             onAction={() => setDetailVisible(false)}
           />
         ) : detailLoading ? (
-          <Typography.Text type="secondary">正在加载订单详情...</Typography.Text>
+          <Typography.Text type="secondary">
+            正在加载订单详情...
+          </Typography.Text>
         ) : detail ? (
           <Space direction="vertical" size={16} style={{ width: '100%' }}>
             <Card>
@@ -360,9 +459,32 @@ export default function OrderListPage() {
                 column={1}
                 data={[
                   { label: '订单号', value: detail.id },
-                  { label: '中拍用户', value: detail.winnerId },
-                  { label: '订单状态', value: renderOrderStatus(detail.status) },
-                  { label: '支付状态', value: renderPayStatus(detail.payStatus) },
+                  {
+                    label: '成交拍品',
+                    value:
+                      detail.lotSnapshot?.title || `拍品 ${detail.auctionId}`,
+                  },
+                  {
+                    label: '拍品类目',
+                    value: detail.lotSnapshot?.category || '--',
+                  },
+                  {
+                    label: '拍品品牌',
+                    value: detail.lotSnapshot?.brand || '--',
+                  },
+                  { label: '中拍用户', value: getWinnerDisplayName(detail) },
+                  {
+                    label: '订单状态',
+                    value: renderOrderStatus(detail.status),
+                  },
+                  {
+                    label: '支付状态',
+                    value: renderPayStatus(detail.payStatus),
+                  },
+                  {
+                    label: '履约状态',
+                    value: renderFulfillmentStatus(detail.fulfillmentStatus),
+                  },
                 ]}
               />
             </Card>
@@ -372,7 +494,10 @@ export default function OrderListPage() {
                   <Descriptions
                     column={1}
                     data={[
-                      { label: '成交价', value: formatCurrency(detail.dealPrice) },
+                      {
+                        label: '成交价',
+                        value: formatCurrency(detail.dealPrice),
+                      },
                       {
                         label: '保证金金额',
                         value: formatCurrency(detail.depositAmount),
@@ -388,7 +513,18 @@ export default function OrderListPage() {
                         label: '支付截止时间',
                         value: formatDateTime(detail.payDeadline),
                       },
-                      { label: '支付时间', value: formatDateTime(detail.paidAt) },
+                      {
+                        label: '支付时间',
+                        value: formatDateTime(detail.paidAt),
+                      },
+                      {
+                        label: '发货时间',
+                        value: formatDateTime(detail.shippedAt),
+                      },
+                      {
+                        label: '收货时间',
+                        value: formatDateTime(detail.receivedAt),
+                      },
                     ]}
                   />
                 </Col>
@@ -398,8 +534,14 @@ export default function OrderListPage() {
               <Descriptions
                 column={1}
                 data={[
-                  { label: '创建时间', value: formatDateTime(detail.createdAt) },
-                  { label: '更新时间', value: formatDateTime(detail.updatedAt) },
+                  {
+                    label: '创建时间',
+                    value: formatDateTime(detail.createdAt),
+                  },
+                  {
+                    label: '更新时间',
+                    value: formatDateTime(detail.updatedAt),
+                  },
                   { label: '关闭时间', value: formatDateTime(detail.closedAt) },
                 ]}
               />

@@ -4,6 +4,7 @@ import { OrderDeal } from './orders';
 export type AuctionStatus =
   | 'DRAFT'
   | 'PENDING_AUDIT'
+  | 'AUDIT_REJECTED'
   | 'READY'
   | 'WARMING_UP'
   | 'RUNNING'
@@ -15,7 +16,8 @@ export type AuctionStatus =
 
 export type AuctionType = 'ENGLISH';
 export type AuctionAntiExtendMode = 'ADD' | 'RESET';
-export type WritableAuctionStatus = 'DRAFT' | 'READY';
+export type WritableAuctionStatus = 'DRAFT' | 'PENDING_AUDIT';
+export type LotCondition = 'NEW' | 'LIKE_NEW' | 'GOOD' | 'FAIR';
 
 export interface AuctionIncrementStep {
   min: number;
@@ -40,8 +42,15 @@ export type AuctionIncrementRule =
   | LadderAuctionIncrementRule;
 
 export interface AuctionCreateRequest {
-  itemId: number;
-  liveRoomId?: number;
+  liveSessionId?: number;
+  title: string;
+  subtitle?: string;
+  description?: string;
+  category: string;
+  brand?: string;
+  condition: LotCondition;
+  imageUrls: string[];
+  coverUrl?: string;
   auctionType: AuctionType;
   startPrice: number;
   reservePrice: number;
@@ -57,6 +66,14 @@ export interface AuctionCreateRequest {
 }
 
 export interface AuctionPatchRequest {
+  title?: string;
+  subtitle?: string;
+  description?: string;
+  category?: string;
+  brand?: string;
+  condition?: LotCondition;
+  imageUrls?: string[];
+  coverUrl?: string;
   startPrice?: number;
   reservePrice?: number;
   capPrice?: number;
@@ -69,13 +86,20 @@ export interface AuctionPatchRequest {
   startTime?: string;
   durationSec?: number;
   endTime?: string;
-  liveRoomId?: number;
+  liveSessionId?: number;
 }
 
 export interface AuctionLot {
   auctionId: number | string;
-  itemId: number | string;
   sellerId: string;
+  title: string;
+  subtitle?: string;
+  description?: string;
+  category: string;
+  brand?: string;
+  condition: LotCondition;
+  imageUrls?: string[];
+  coverUrl?: string;
   auctionType: AuctionType;
   startPrice: number;
   reservePrice?: number | null;
@@ -86,6 +110,7 @@ export interface AuctionLot {
   antiExtendMode?: AuctionAntiExtendMode;
   depositAmount: number;
   status: AuctionStatus;
+  auditRejectReason?: string;
   ruleSnapshot: Record<string, unknown> | string;
   startTime: string;
   durationSec?: number | null;
@@ -94,17 +119,20 @@ export interface AuctionLot {
   dealPrice?: number | null;
   closedAt?: string | null;
   closedBy?: string;
+  currentPrice?: number | null;
+  leaderBidderId?: string;
   createdAt: string;
   updatedAt: string;
-  liveRoomId?: number;
   liveSessionId?: number | string | null;
   bidCount?: number;
 }
 
 export interface ListAuctionsParams {
   sellerId?: string;
-  itemId?: number;
   status?: AuctionStatus;
+  category?: string;
+  keyword?: string;
+  liveSessionId?: number | string;
   limit?: number;
   offset?: number;
 }
@@ -113,9 +141,43 @@ export interface ListAuctionsResult {
   auctions: AuctionLot[];
 }
 
+export interface AuctionImageUploadResult {
+  imageUrls: string[];
+  coverUrl?: string;
+}
+
+export interface AuctionCategory {
+  id: string;
+  name: string;
+  iconName?: string;
+}
+
+export interface ListAuctionCategoriesResult {
+  categories: AuctionCategory[];
+}
+
+export function listAuctionCategories() {
+  const config: HttpRequestConfig = {
+    params: {
+      limit: 50,
+      offset: 0,
+    },
+    skipGlobalLoading: true,
+    skipErrorMessage: true,
+  };
+
+  return http.get<any, ListAuctionCategoriesResult>(
+    '/api/v1/categories',
+    config
+  );
+}
+
 export interface AuctionState {
   auctionId: number | string;
   status: AuctionStatus;
+  startPrice: number;
+  capPrice: number;
+  incrementRule?: AuctionIncrementRule;
   currentPrice: number;
   leaderBidderId?: string;
   startTime: string;
@@ -166,7 +228,10 @@ export function fetchAuctionState(id: string | number) {
   });
 }
 
-export function updateAuction(id: string | number, payload: AuctionPatchRequest) {
+export function updateAuction(
+  id: string | number,
+  payload: AuctionPatchRequest
+) {
   return http.patch<any, AuctionLot>(`/api/v1/auctions/${id}`, payload);
 }
 
@@ -211,5 +276,31 @@ export function hammerAuction(
         'Idempotency-Key': idempotencyKey,
       },
     }
+  );
+}
+
+export interface LotDescriptionOptimizeResult {
+  title: string;
+  category: string;
+  description: string;
+}
+
+export function optimizeLotDescription(payload: FormData) {
+  return http.post<any, LotDescriptionOptimizeResult>(
+    '/api/v1/auctions/description/optimize',
+    payload,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
+  );
+}
+
+export function uploadAuctionImages(payload: FormData) {
+  const config: HttpRequestConfig = {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    skipErrorMessage: true,
+  };
+  return http.post<any, AuctionImageUploadResult>(
+    '/api/v1/auctions/images',
+    payload,
+    config
   );
 }

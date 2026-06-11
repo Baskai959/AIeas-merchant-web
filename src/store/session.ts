@@ -22,9 +22,8 @@ function buildPermissions(role?: UserRole): PermissionMap {
   if (role === 'merchant') {
     return {
       overview: ['read'],
-      items: ['read', 'write'],
       auctions: ['read', 'write'],
-      'live-rooms': ['read', 'write'],
+      'live-sessions': ['read', 'write'],
       orders: ['read'],
       'audit-logs': ['read'],
     };

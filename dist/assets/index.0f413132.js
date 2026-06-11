@@ -1,0 +1,1 @@
+import{j as o,B as a}from"./index.ba9976c8.js";import{R as i}from"./index.2a3bc715.js";function m(n){const{status:t,title:r,subtitle:u,actionText:s,onAction:e}=n;return o(i,{status:t==="empty"?"info":t,title:r,subTitle:u,extra:s&&e?o(a,{type:"primary",onClick:e,children:s}):null})}export{m as A};

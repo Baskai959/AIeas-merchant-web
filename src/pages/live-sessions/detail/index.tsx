@@ -1,1 +1,1 @@
-export { default } from '@/modules/live-rooms/session-detail-page';
+export { default } from '@/modules/live-sessions/session-detail-page';

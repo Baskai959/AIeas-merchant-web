@@ -7,9 +7,16 @@ import setting from './src/settings.json';
 // https://vitejs.dev/config/
 export default defineConfig({
   server: {
+    port: 3030,
+    strictPort: true,
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8888',
+        changeOrigin: true,
+      },
+      '/ws': {
+        target: 'ws://127.0.0.1:8888',
+        ws: true,
         changeOrigin: true,
       },
     },

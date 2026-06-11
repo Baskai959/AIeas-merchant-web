@@ -1,4 +1,5 @@
 import { readSessionSnapshot } from './http/storage';
+import { buildWebSocketUrl as createWebSocketUrl } from './websocket-url';
 
 export type AuctionRoomConnectionStatus =
   | 'idle'
@@ -28,18 +29,11 @@ const HEARTBEAT_INTERVAL_MS = 15000;
 const MAX_RECONNECT_DELAY_MS = 10000;
 
 function buildWebSocketUrl(auctionId: string | number, lastSeq?: number) {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const url = new URL(`${protocol}//${window.location.host}/ws/auctions/${auctionId}`);
   const accessToken = readSessionSnapshot().tokens?.accessToken;
-
-  if (accessToken) {
-    url.searchParams.set('token', accessToken);
-  }
-  if (lastSeq && lastSeq > 0) {
-    url.searchParams.set('lastSeq', String(lastSeq));
-  }
-
-  return url.toString();
+  return createWebSocketUrl(`auctions/${auctionId}`, {
+    token: accessToken,
+    lastSeq: lastSeq && lastSeq > 0 ? lastSeq : undefined,
+  });
 }
 
 export default class AuctionRoomClient {
